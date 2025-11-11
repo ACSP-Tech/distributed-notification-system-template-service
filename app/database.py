@@ -1,5 +1,6 @@
 # app/database.py
-from sqlalchemy import create_engine, SQLModel
+from sqlalchemy import create_engine
+from sqlmodel import SQLModel
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from .sec import settings
@@ -9,7 +10,7 @@ import redis
 # We pass the 'sslmode': 'require' in connect_args.
 # This is the correct way for psycopg2 (the sync driver).
 engine = create_engine(
-    settings.DATABASE_URL,
+    str(settings.DATABASE_URL),
     echo=False,
     pool_pre_ping=True
 )

@@ -46,6 +46,8 @@ class Template(SQLModel, table=True):
     # Relationships
     # This links to all its versions
     versions: List["TemplateVersion"] = Relationship(
-        back_populates="template", 
-        cascade="all, delete-orphan"
+        back_populates="template",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
     )

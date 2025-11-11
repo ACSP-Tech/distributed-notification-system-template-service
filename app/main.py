@@ -1,19 +1,20 @@
 # app/main.py
 from fastapi import FastAPI
-from .database import engine, Base
 from .routers import templates, keepalive
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from .database import init_db
 from .setup_main import configure_cors
 
 # --- SYNC LIFESPAN ---
-@contextmanager
-def lifespan(app: FastAPI):
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """
-    Synchronous lifespan function.
-    Runs 'init_db()' on startup.
+    Asynchronous lifespan function.
+    Runs the synchronous 'init_db()' on startup.
     """
-    init_db()  
+    print("Application startup... running init_db().")
+    init_db()
+    print("Database initialized.")
     yield
 
 # calling an instance of fast api

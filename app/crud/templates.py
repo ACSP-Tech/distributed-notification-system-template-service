@@ -95,6 +95,7 @@ def activate_single_template_version(template_key, version, db):
         
         # db.commit()
         db_template = get_template_by_key(db, template_key)
+        #find the version to activate
         statement = select(TemplateVersion).where(
             TemplateVersion.template_id == db_template.id,
             TemplateVersion.id == version
@@ -106,17 +107,35 @@ def activate_single_template_version(template_key, version, db):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Version '{version}' for template '{template_key}' not found")
-        
+        # 2. Get its language and template_id for the "smart" update
+        lang_to_update = db_version.language
+        # template_id_to_update = db_version.id
+
         # Deactivate all versions
-        deactivate_all_versions = db.select(TemplateVersion).where(TemplateVersion.template_id == db_template.id).update({TemplateVersion.is_active: False})   
-        
-        # Activate the specified version
-        update_single_version = db.select(TemplateVersion).where(
-            TemplateVersion.template_id == db_template.id,
-            TemplateVersion.id == version
-        ).update({TemplateVersion.is_active: True})
-        
-        db.commit()
+        statement = select(TemplateVersion).where(and_(TemplateVersion.template_id == db_template.template_id,
+            TemplateVersion.language == lang_to_update,
+            TemplateVersion.is_active == True)).update({TemplateVersion.is_active: False})   
+        deactivate_all_versions = db.execute(statement)
+
+        # 4. Activate the target version
+        db_version.is_active = True
+        db.add(db_version)
+
+        # 5. Commit both changes
+        try:
+            db.commit()
+            db.refresh(db_version)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error: {e}"
+            )
+
+        # 6. IMPORTANT: Clear the cache for this specific template/language
+        if redis_client:
+            cache_key = f"template:{template_key}:{lang_to_update}:active"
+            redis_client.delete(cache_key)
+
         return {"message": f"Template '{template_key}' version '{version}' activated successfully."}
     
     except HTTPException as http_exc:
@@ -125,6 +144,7 @@ def activate_single_template_version(template_key, version, db):
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error activating template version: {e}")
+    
 
 
 def _query_active_template_from_db(db, template_key, language) -> str | None:

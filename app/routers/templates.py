@@ -1,8 +1,8 @@
 # app/routers/templates.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import get_db
-from ..crud.templates import create_template, create_template_version, get_template_by_key, activate_single_template_version, render_template_internal
-from ..schemas.templates import Template, TemplateBase, TemplateVersion, TemplateVersionBase, TemplateRead, RenderResponse, RenderRequest, delete_template_and_all_version, delete_template_and_version
+from ..crud.templates import create_template, create_template_version, get_template_by_key, activate_single_template_version, render_template_internal, delete_template_and_version, delete_template_and_all_versions
+from ..schemas.templates import Template, TemplateBase, TemplateVersion, TemplateVersionBase, TemplateRead, RenderResponse, RenderRequest
 
 router = APIRouter(
     prefix="/api/v1",
@@ -136,7 +136,7 @@ def delete_template(template_key: str, db = Depends(get_db)):
     Raises 404 if template not found.
     """
     try:
-        return delete_template_and_all_version(template_key, db = Depends(get_db))
+        return delete_template_and_all_versions(template_key, db = Depends(get_db))
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
