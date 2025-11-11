@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import get_db
 from ..crud.templates import create_template, create_template_version, get_template_by_key, activate_single_template_version, render_template_internal, delete_template_and_version, delete_template_and_all_versions
-from ..schemas.templates import Template, TemplateBase, TemplateVersion, TemplateVersionBase, TemplateRead, RenderResponse, RenderRequest
+from ..schemas.templates import Template, TemplateBase, TemplateVers, TemplateVersionBase, TemplateRead, RenderResponse, RenderRequest
 
 router = APIRouter(
     prefix="/api/v1",
@@ -29,7 +29,7 @@ def create_new_template(template:TemplateBase, db = Depends(get_db)):
             detail=f"Error creating template: {e}"
         )
 
-@router.post("/templates/versions/{template_key}", response_model=TemplateVersion, status_code= status.HTTP_201_CREATED)
+@router.post("/templates/versions/{template_key}", response_model=TemplateVers, status_code= status.HTTP_201_CREATED)
 def create_new_template_version(template_key: str, version:TemplateVersionBase, db = Depends(get_db)):
     """
     Adds a new version to an existing template.
@@ -59,7 +59,7 @@ def get_template(template_key: str, db = Depends(get_db)):
     Fetches a template by its unique template_key.
     - Rasises 404 if not found. 500 for other errors.
     - Returns the Template object with all its versions.
-    - taken template_key as a body parameter
+    - taken template_key as path parameter
     """
     try:
         return get_template_by_key(db, template_key)
@@ -136,7 +136,7 @@ def delete_template(template_key: str, db = Depends(get_db)):
     Raises 404 if template not found.
     """
     try:
-        return delete_template_and_all_versions(template_key, db = Depends(get_db))
+        return delete_template_and_all_versions(template_key, db)
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:

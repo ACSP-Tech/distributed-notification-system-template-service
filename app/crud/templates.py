@@ -1,7 +1,7 @@
 # app/crud.py
 from ..database import redis_client
 from ..models.templates import Template, TemplateVersion
-from sqlmodel import select, and_
+from sqlmodel import select, and_, update
 from ..utils.templates import render_template_string
 from fastapi import HTTPException, status
 
@@ -61,7 +61,7 @@ def create_template_version(db, template_key, version):
         result_version = db.execute(statement_version)
         current_max_version = result_version.scalars().first()
         
-        next_version = (current_max_version[0] + 1) if current_max_version else 1
+        next_version = (current_max_version.version + 1) if current_max_version else 1
         
         db_version = TemplateVersion(
             content=version.content,
@@ -109,12 +109,12 @@ def activate_single_template_version(template_key, version, db):
                 detail=f"Version '{version}' for template '{template_key}' not found")
         # 2. Get its language and template_id for the "smart" update
         lang_to_update = db_version.language
-        # template_id_to_update = db_version.id
+        #template_id_to_update = db_version.id
 
         # Deactivate all versions
-        statement = select(TemplateVersion).where(and_(TemplateVersion.template_id == db_template.template_id,
+        statement = update(TemplateVersion).where(and_(TemplateVersion.template_id == db_template.id,
             TemplateVersion.language == lang_to_update,
-            TemplateVersion.is_active == True)).update({TemplateVersion.is_active: False})   
+            TemplateVersion.is_active == True)).values(is_active = False)   
         deactivate_all_versions = db.execute(statement)
 
         # 4. Activate the target version
@@ -141,7 +141,7 @@ def activate_single_template_version(template_key, version, db):
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error activating template version: {e}")
     
@@ -236,7 +236,7 @@ def delete_template_and_version(template_key: str, version: str, db):
     except HTTPException as httpexc:
         raise httpexc
     
-def delete_template_and_all_versions(template_key: str, db):
+def delete_template_and_all_versions(template_key, db):
     try:
         db_template = get_template_by_key(db, template_key)
         db.delete(db_template)

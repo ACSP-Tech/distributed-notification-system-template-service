@@ -45,7 +45,7 @@ class TemplateVersionBase(BaseModel):
 #     pass
 
 
-class TemplateVersion(TemplateVersionBase):
+class TemplateVers(TemplateVersionBase):
     id: str #placehoder to come back
     version: int
     is_active: bool
@@ -116,7 +116,7 @@ class TemplateRead(TemplateBase):
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    versions: list[TemplateVersion] = []
+    versions: list[TemplateVers] = []
 
     class Config:
         from_attributes = True      
