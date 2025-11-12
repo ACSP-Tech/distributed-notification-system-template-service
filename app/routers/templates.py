@@ -53,7 +53,7 @@ def create_new_template_version(template_key: str, version:TemplateVersionBase, 
             detail=f"Error creating template version: {e}"
         )
 
-@router.get("templates/{template_key}", response_model=TemplateRead, status_code=status.HTTP_200_OK)
+@router.get("/templates/{template_key}", response_model=TemplateRead, status_code=status.HTTP_200_OK)
 def get_template(template_key: str, db = Depends(get_db)):
     """
     Fetches a template by its unique template_key.
